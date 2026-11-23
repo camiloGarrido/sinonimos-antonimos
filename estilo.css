@@ -2,3 +2,7 @@ body {
   background-color: bisque;
   color: blue;
 }
+
+.d-none {
+  display: none;
+}

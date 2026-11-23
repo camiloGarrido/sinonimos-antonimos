@@ -5,24 +5,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>sinonimos y antonimos</title>
     <link rel="stylesheet" href="estilo.css" />
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-analytics.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        doc,
+        updateDoc,
+        deleteDoc,
+        onSnapshot,
+        query,
+        orderBy,
+        limit,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+      // TODO: Add SDKs for Firebase products that you want to use
+      // https://firebase.google.com/docs/web/setup#available-libraries
+
+      // Your web app's Firebase configuration
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+      const firebaseConfig = {
+        apiKey: "AIzaSyCze4pIwWwQSHRX2SpmMmOGcXcMeZFI_XM",
+        authDomain: "sinonimos-antonimos.firebaseapp.com",
+        projectId: "sinonimos-antonimos",
+        storageBucket: "sinonimos-antonimos.firebasestorage.app",
+        messagingSenderId: "253658298135",
+        appId: "1:253658298135:web:883c09b5256041d655e952",
+        measurementId: "G-X7XK9QRQHX",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const db = getFirestore(app);
+      const coleccion = collection(db, "personas");
+      const consulta = query(coleccion, orderBy("creado", "desc"), limit(3));
+
+      async function pruebaInicial() {
+        await addDoc(coleccion, {
+          nombre: "Ana",
+          correo: "ana@mail.com",
+          creado: serverTimestamp(),
+        });
+      }
+
+      async function guardarRegistro() {
+        let nombre = document.getElementById("nombre").value.trim();
+        let correo = document.getElementById("correo").value.trim();
+
+        if (nombre && correo) {
+          await addDoc(coleccion, {
+            nombre,
+            correo,
+            creado: serverTimestamp(),
+          });
+          console.log("se guardo con exito");
+          document.getElementById("formulario").reset();
+        }
+      }
+
+      async function actualizarRegistro() {
+        const id = document.getElementById("idEdicion").value;
+        const nombre = document.getElementById("nombreEdicion").value;
+        await updateDoc(doc(db, "personas", id), { nombre });
+        document
+          .getElementById("formularioActualizacion")
+          .classList.add("d-none");
+      }
+      async function eliminarRegistro(id) {
+        await deleteDoc(doc(db, "personas", id));
+      }
+
+      function abrirActualizar(id, nombre) {
+        console.log(id, nombre);
+        document
+          .getElementById("formularioActualizacion")
+          .classList.remove("d-none");
+        document.getElementById("idEdicion").value = id;
+        document.getElementById("nombreEdicion").value = nombre;
+      }
+
+      window.addEventListener("load", (event) => {
+        onSnapshot(consulta, (snap) => {
+          const contenido = document.getElementById("contenido");
+          contenido.replaceChildren();
+          snap.docs.forEach((d) => {
+            //console.log(d.id, d.data());
+            const data = d.data();
+            const h2 = document.createElement("h2");
+            const div = document.createElement("div");
+            const button = document.createElement("button");
+            const buttonEliminar = document.createElement("button");
+            h2.textContent = ` ${data.nombre} - ${data.correo}`;
+            button.addEventListener("click", () =>
+              abrirActualizar(d.id, data.nombre),
+            );
+            button.textContent = "Actualizar";
+            buttonEliminar.addEventListener("click", () =>
+              eliminarRegistro(d.id),
+            );
+            buttonEliminar.textContent = "Eliminar";
+            div.appendChild(h2);
+            div.appendChild(button);
+            div.appendChild(buttonEliminar);
+            contenido.appendChild(div);
+          });
+        });
+      });
+      document
+        .getElementById("enviar")
+        .addEventListener("click", guardarRegistro);
+      document
+        .getElementById("enviarActualizacion")
+        .addEventListener("click", actualizarRegistro);
+    </script>
   </head>
   <body>
     <h1>Proyecto Sinonimos y antonimos</h1>
     <h2>Sub titulo</h2>
     <div>
-      <form>
-        <label for="nombre">Nombre</label>
-        <input
-          type="text"
-          name="nombre"
-          id="nombre"
-          placeholder="Ej:Camilo Garrido"
-        />
+      <form id="formulario">
         <div>
-          <button type="button">Enviar</button>
+          <label for="nombre">Nombre</label>
+          <input
+            type="text"
+            name="nombre"
+            id="nombre"
+            placeholder="Ej:Camilo Garrido"
+          />
+        </div>
+        <div>
+          <label for="correo">Correo</label>
+          <input
+            type="email"
+            name="correo"
+            id="correo"
+            placeholder="Ej:c@c.cl"
+          />
+        </div>
+        <div>
+          <button type="button" id="enviar">Enviar</button>
           <button type="reset">Limpiar</button>
         </div>
       </form>
+      <hr />
+      <div id="formularioActualizacion" class="d-none">
+        <form>
+          <div>
+            <label for="nombreEdicion">Nombre</label>
+            <input type="hidden" name="idEdicion" id="idEdicion" />
+            <input
+              type="text"
+              name="nombreEdicion"
+              id="nombreEdicion"
+              placeholder="Ej:Camilo Garrido"
+            />
+          </div>
+          <div>
+            <button type="button" id="enviarActualizacion">Enviar</button>
+            <button type="reset">cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="contenido"></div>
     </div>
   </body>
 </html>
